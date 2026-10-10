@@ -71,7 +71,8 @@
   .nav:hover { color: var(--text-primary); }
   .crumb { border: none; background: none; padding: 2px 4px; color: var(--text-secondary); }
   .crumb.current { color: var(--text-primary); }
-  .nav.active { color: var(--text-primary); background: rgb(255 62 165 / .14); box-shadow: inset 0 -2px 0 var(--pink), 0 6px 14px -8px rgb(255 62 165 / .8); }
+  /* translucent pink with soft, blurred edges */
+  .nav.active { color: var(--text-primary); background: rgb(255 62 165 / .13); box-shadow: 0 0 12px 3px rgb(255 62 165 / .13); backdrop-filter: blur(6px); }
   .local { margin-left: auto; font-size: 12px; }
   .ok { color: var(--ok); text-shadow: var(--glow-green); }
   main { flex: 1; min-height: 0; overflow: auto; }

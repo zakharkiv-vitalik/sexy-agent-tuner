@@ -250,7 +250,7 @@
   h1 { font-size: 16px; margin: 0 0 2px; font-weight: 600; }
   nav { display: flex; gap: 2px; margin-top: 10px; }
   nav button { border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 6px 12px; color: var(--text-secondary); }
-  nav button.active { border-bottom-color: var(--accent); color: var(--text-primary); box-shadow: 0 6px 12px -8px rgb(255 62 165 / .9); }
+  nav button.active { color: var(--text-primary); background: rgb(255 62 165 / .13); box-shadow: 0 0 12px 3px rgb(255 62 165 / .13); border-radius: 6px; backdrop-filter: blur(6px); }
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin-bottom: 12px; }
   .more > summary { padding: 4px 0 12px; font-weight: 600; }
   .tile { padding: 9px 12px; }
