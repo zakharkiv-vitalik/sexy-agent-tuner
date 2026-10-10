@@ -6,8 +6,11 @@ import (
 	"log"
 
 	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/menu"
+	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 //go:embed all:frontend/dist
@@ -26,8 +29,28 @@ func main() {
 		OnStartup:        app.startup,
 		OnShutdown:       app.shutdown,
 		Bind:             []any{app},
+		Menu:             appMenu(app),
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// appMenu is the standard macOS menu bar. Edit makes ⌘C/⌘V work in inputs;
+// View adds full screen, which Wails has no ready-made role for.
+func appMenu(app *App) *menu.Menu {
+	m := menu.NewMenu()
+	m.Append(menu.AppMenu())
+	m.Append(menu.EditMenu())
+	view := m.AddSubmenu("View")
+	view.AddText("Toggle Full Screen", &keys.Accelerator{Key: "f", Modifiers: []keys.Modifier{keys.CmdOrCtrlKey, keys.ControlKey}},
+		func(*menu.CallbackData) {
+			if runtime.WindowIsFullscreen(app.ctx) {
+				runtime.WindowUnfullscreen(app.ctx)
+			} else {
+				runtime.WindowFullscreen(app.ctx)
+			}
+		})
+	m.Append(menu.WindowMenu())
+	return m
 }

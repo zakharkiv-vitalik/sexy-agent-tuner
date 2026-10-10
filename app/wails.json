@@ -9,5 +9,11 @@
   "author": {
     "name": "vitaliy zakharkiv",
     "email": "333716737+zakharkiv-vitalik@users.noreply.github.com"
+  },
+  "info": {
+    "productName": "Sexy Agent Tuner",
+    "productVersion": "0.1.0",
+    "comments": "Where your coding agent burns tokens, and what to change",
+    "copyright": "vitaliy zakharkiv"
   }
 }

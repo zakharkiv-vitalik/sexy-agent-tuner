@@ -86,8 +86,12 @@ skill, a subagent or a reusable script), plus the AI analysis across every repo.
 git clone https://github.com/zakharkiv-vitalik/sexy-agent-tuner
 cd sexy-agent-tuner/app
 wails build                       # → app/build/bin/sexy-agent-tuner.app
-open build/bin/sexy-agent-tuner.app
+cp -R build/bin/sexy-agent-tuner.app "/Applications/Sexy Agent Tuner.app"
+open "/Applications/Sexy Agent Tuner.app"
 ```
+
+Once it's in `/Applications` it shows up in Launchpad and Spotlight. To keep it in the Dock, right-click its
+icon there and choose **Options → Keep in Dock**.
 
 On first launch, open **Import more** and press **Import all**. The app finds your sessions in
 `~/.claude/projects` by itself. For live reload while hacking on the UI, run `wails dev`.
