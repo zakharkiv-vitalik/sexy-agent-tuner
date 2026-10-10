@@ -246,16 +246,16 @@
 <style>
   .wrap { display: flex; flex-direction: column; height: 100%; }
   .pad { padding: 16px; }
-  .top { padding: 14px 16px 0; border-bottom: 1px solid var(--border); background: var(--surface-1); }
+  .top { padding: 14px 16px 0; border-bottom: 1px solid var(--border); background: var(--surface-1); backdrop-filter: blur(8px); }
   h1 { font-size: 16px; margin: 0 0 2px; font-weight: 600; }
   nav { display: flex; gap: 2px; margin-top: 10px; }
   nav button { border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 6px 12px; color: var(--text-secondary); }
-  nav button.active { border-bottom-color: var(--accent); color: var(--text-primary); }
+  nav button.active { border-bottom-color: var(--accent); color: var(--text-primary); box-shadow: 0 6px 12px -8px rgb(255 62 165 / .9); }
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin-bottom: 12px; }
   .more > summary { padding: 4px 0 12px; font-weight: 600; }
   .tile { padding: 9px 12px; }
   .tile .muted { font-size: 11px; }
-  .tile .value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
+  .tile .value { color: var(--green); text-shadow: var(--glow-green); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
   .tile .secondary { font-size: 11px; color: var(--text-muted); }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 16px; }
   .span2 { grid-column: 1 / -1; }

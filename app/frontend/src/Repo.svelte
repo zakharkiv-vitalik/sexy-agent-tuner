@@ -105,9 +105,9 @@
   .shead .id { margin-left: 12px; }
   .size { margin-left: auto; display: flex; align-items: center; gap: 8px; font-weight: 400; }
   .track { width: 120px; height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-  .fill { display: block; height: 100%; background: var(--link); border-radius: 3px; }
-  .fill.big { background: var(--lane-test); }
-  .bigtext { color: var(--lane-test); }
+  .fill { display: block; height: 100%; background: var(--blue); border-radius: 3px; box-shadow: var(--glow-blue); }
+  .fill.big { background: var(--pink); box-shadow: var(--glow-pink); }
+  .bigtext { color: var(--pink); text-shadow: var(--glow-pink); }
   .seg { display: flex; }
   .seg button { padding: 2px 8px; font-size: 12px; border-radius: 0; }
   .seg button:first-child { border-radius: 6px 0 0 6px; }

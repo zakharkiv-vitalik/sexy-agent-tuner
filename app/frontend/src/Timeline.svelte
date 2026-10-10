@@ -148,7 +148,7 @@
 
       <path d={ctxPath} class="ctx" />
       {#if hover && hover.p.e.Context > 0}
-        <circle cx={hover.x} cy={ctxY(hover.p.e.Context)} r="4" fill="var(--seq)" stroke="var(--surface-1)" stroke-width="2" />
+        <circle cx={hover.x} cy={ctxY(hover.p.e.Context)} r="4" fill="var(--seq)" stroke="var(--surface-solid)" stroke-width="2" />
       {/if}
 
       {#each points as p (p.e.Seq)}
@@ -158,9 +158,9 @@
           <circle cx={x} cy={y} r="6" fill="none" stroke="var(--critical)" stroke-width="1.5" />
         {/if}
         {#if p.e.Agent}
-          <circle cx={x} cy={y} r="3" fill="var(--surface-1)" stroke={laneColor(p.lane)} stroke-width="1.5" />
+          <circle cx={x} cy={y} r="3" fill="var(--surface-solid)" stroke={laneColor(p.lane)} stroke-width="1.5" />
         {:else}
-          <circle cx={x} cy={y} r="3.5" fill={laneColor(p.lane)} stroke="var(--surface-1)" stroke-width="1" />
+          <circle cx={x} cy={y} r="3.5" fill={laneColor(p.lane)} stroke="var(--surface-solid)" stroke-width="1" />
         {/if}
       {/each}
 
@@ -275,14 +275,14 @@
   .axis { stroke: var(--border); stroke-width: 1; }
   .cross { stroke: var(--text-muted); stroke-width: 1; }
   .focus { stroke: var(--text-primary); stroke-width: 1.5; stroke-dasharray: 3 3; }
-  .ctx { fill: none; stroke: var(--seq); stroke-width: 2; stroke-linejoin: round; }
-  .labelbg { fill: var(--surface-1); }
+  .ctx { fill: none; stroke: var(--seq); stroke-width: 2; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgb(62 197 255 / .7)); }
+  .labelbg { fill: var(--surface-solid); }
   .lane { fill: var(--text-secondary); font-size: 11px; text-anchor: end; }
   .tick { fill: var(--text-muted); font-size: 10px; text-anchor: end; font-variant-numeric: tabular-nums; }
   .tick.mid { text-anchor: middle; }
   .tip {
     position: absolute; width: 320px; pointer-events: none; z-index: 2;
-    background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
+    background: var(--surface-solid); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
     box-shadow: 0 4px 16px rgb(0 0 0 / .15); font-size: 12px;
   }
   .tip .mono { word-break: break-all; margin: 2px 0; }

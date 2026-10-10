@@ -22,7 +22,7 @@ func main() {
 		MinWidth:         900,
 		MinHeight:        600,
 		AssetServer:      &assetserver.Options{Assets: assets},
-		BackgroundColour: &options.RGBA{R: 11, G: 18, B: 21, A: 255}, // --surface-0, no white flash on start
+		BackgroundColour: &options.RGBA{R: 7, G: 6, B: 11, A: 255}, // --surface-0, no white flash on start
 		OnStartup:        app.startup,
 		OnShutdown:       app.shutdown,
 		Bind:             []any{app},

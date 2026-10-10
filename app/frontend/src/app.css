@@ -1,33 +1,45 @@
 :root {
   color-scheme: dark;
-  /* ink surfaces with a blue-green tint; borders barely above the surface */
-  --surface-0: #0b1215;
-  --surface-1: #101a1e;
-  --surface-2: #17242a;
-  --border: #1d2c32;
-  --grid: #16222788;
-  --text-primary: #e4eef0;
-  --text-secondary: #9db2b8;
-  --text-muted: #71868d;
-  --accent: #34d399;   /* emerald: actions, active state */
-  --accent-ink: #04130d;
-  --link: #60a5fa;     /* blue: evidence refs, selection */
-  --critical: #f87171;
-  /* lane colors: cool hues for behavior, amber kept for tests so it reads as a check */
-  --lane-read: #60a5fa;
-  --lane-search: #22c3d6;
-  --lane-edit: #34d399;
-  --lane-test: #e8b341;
-  --lane-mcp: #c08cf2;
-  --lane-delegate: #818cf8;
-  --lane-other: #4f6168;
-  --lane-prompt: #e4eef0;
-  --seq: #60a5fa;
+  /* near-black with a violet tint; cards are smoked glass over the doodle background */
+  --surface-0: #07060b;
+  --surface-solid: #110d19;           /* opaque card color, for chart masks and tooltips */
+  --surface-1: rgb(17 13 25 / .8);
+  --surface-2: #1d1729;
+  --border: rgb(255 62 165 / .14);
+  --grid: rgb(255 255 255 / .05);
+  --text-primary: #f4efff;
+  --text-secondary: #b9b0cf;
+  --text-muted: #857c9e;
+  /* neon trio */
+  --pink: #ff3ea5;
+  --green: #39ff88;
+  --blue: #3ec5ff;
+  --accent: var(--pink);              /* actions, active state */
+  --accent-ink: #1a0010;
+  --link: var(--blue);                /* evidence refs, selection */
+  --ok: var(--green);
+  --critical: #ff5c7a;
+  --glow-pink: 0 0 12px rgb(255 62 165 / .55);
+  --glow-green: 0 0 12px rgb(57 255 136 / .45);
+  --glow-blue: 0 0 12px rgb(62 197 255 / .45);
+  /* lanes: each behavior gets its own neon */
+  --lane-read: #3ec5ff;
+  --lane-search: #b06bff;
+  --lane-edit: #39ff88;
+  --lane-test: #ffd23e;
+  --lane-mcp: #ff3ea5;
+  --lane-delegate: #7c8cff;
+  --lane-other: #5d5672;
+  --lane-prompt: #f4efff;
+  --seq: #3ec5ff;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {
-  background: var(--surface-0);
+  /* two doodle layers with co-prime sizes so the tile grid doesn't show */
+  background: url('/doodles.svg') 0 0 / 420px repeat, url('/doodles.svg') 150px 95px / 290px repeat, radial-gradient(1200px 600px at 85% -10%, rgb(255 62 165 / .10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgb(57 255 136 / .07), transparent 60%), var(--surface-0);
+  background-attachment: fixed;
   color: var(--text-primary);
   font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -38,10 +50,10 @@ button {
   transition: background .12s, border-color .12s, color .12s;
 }
 button:hover { background: var(--surface-2); border-color: var(--surface-2); }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-button.primary:hover { filter: brightness(1.08); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; box-shadow: var(--glow-pink); }
+button.primary:hover { filter: brightness(1.1); box-shadow: 0 0 18px rgb(255 62 165 / .75); }
 input[type=checkbox] { accent-color: var(--accent); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; box-shadow: var(--glow-pink); }
 ::selection { background: color-mix(in srgb, var(--link) 35%, transparent); }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 5px; border: 2px solid var(--surface-0); }
@@ -59,12 +71,16 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .muted { color: var(--text-muted); }
 .secondary { color: var(--text-secondary); }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / .02), 0 8px 30px rgb(0 0 0 / .45);
+}
 h2 { font-size: 13px; font-weight: 600; letter-spacing: .01em; margin: 0 0 8px; }
 /* collapsible section: a one-line summary that opens on click */
 details.fold > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
 details.fold > summary::-webkit-details-marker { display: none; }
-details.fold > summary::before { content: '▸'; color: var(--accent); width: 10px; flex: none; }
+details.fold > summary::before { content: '▸'; color: var(--accent); width: 10px; flex: none; text-shadow: var(--glow-pink); }
 details.fold[open] > summary::before { content: '▾'; }
 .ref {
   font: 11px ui-monospace, Menlo, monospace; padding: 0 5px; border-radius: 4px; margin: 0 3px 3px 0;
