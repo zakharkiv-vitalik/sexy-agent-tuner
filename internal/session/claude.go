@@ -229,7 +229,7 @@ func resultText(raw json.RawMessage) string {
 // typed by the human (command wrappers, interrupts, reminders).
 func isSyntheticPrompt(t string) bool {
 	t = strings.TrimSpace(t)
-	for _, p := range []string{"<command-", "<local-command-", "<system-reminder>", "<task-notification>", "[Request interrupted", "[SYSTEM NOTIFICATION", "Caveat:", "This session is being continued from a previous conversation"} {
+	for _, p := range []string{"<command-", "<local-command-", "<bash-input>", "<bash-stdout>", "<bash-stderr>", "<system-reminder>", "<task-notification>", "[Request interrupted", "[SYSTEM NOTIFICATION", "Caveat:", "This session is being continued from a previous conversation"} {
 		if strings.HasPrefix(t, p) {
 			return true
 		}
