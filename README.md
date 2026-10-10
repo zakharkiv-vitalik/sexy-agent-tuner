@@ -1,64 +1,175 @@
-# Sexy Agent Tuner (sat)
+<h1 align="center">💋 Sexy Agent Tuner</h1>
 
-Local-first analysis of coding-agent sessions: what happened, where the time and
-tokens went, and (later) what to change in the prompt / context / workflow.
+<p align="center">
+  <b>See where your coding agent burns tokens, and what to change so the next session doesn't.</b><br>
+  Local-first analysis of Claude Code sessions: prompts, tools, context growth, and concrete fixes<br>
+  for your prompts, <code>CLAUDE.md</code>, skills, subagents and scripts.
+</p>
 
-## Pipeline
+<p align="center">
+  <img alt="Go" src="https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white">
+  <img alt="Wails" src="https://img.shields.io/badge/desktop-Wails%20%2B%20Svelte-ff3ea5">
+  <img alt="Local only" src="https://img.shields.io/badge/data-local%20only-39ff88">
+</p>
 
+<p align="center">
+  <img src="docs/screenshots/session.jpg" alt="Session overview: key numbers and the top findings" width="900">
+</p>
+
+---
+
+## Why
+
+Claude Code writes every session to `~/.claude/projects/**/*.jsonl`. These logs say exactly what
+happened (every prompt, tool call, result and token count), but nobody reads them: one message is
+split across lines, tool results live apart from their calls, and subagents write to separate files.
+
+So the expensive questions go unanswered:
+
+- Why did this session process **236M tokens**?
+- Why does the agent re-read the same ten files at the start of **every** task?
+- Which instructions do I keep **retyping** that should live in `CLAUDE.md` or a skill?
+
+Sexy Agent Tuner parses those logs, measures what happened, and turns the patterns into suggestions
+you can copy. It never interprets raw logs with an LLM: every number is computed, and every
+suggestion links back to the exact events that triggered it.
+
+## Features
+
+- **Repos → prompts → sessions.** Sessions are grouped by repository. Open a repo to see every prompt
+  you typed there, with each session's size (processed tokens, peak context) so the heavy ones stand out.
+- **Findings, not dashboards.** Each suggestion separates the **fact** (measured) from the
+  **hypothesis** (what it might mean) and gives a **snippet** to paste into a prompt or `CLAUDE.md`,
+  plus the expected benefit, the possible downside and the evidence.
+- **Across sessions and repos.** Finds instructions you repeat, files every session re-explores and
+  tool chains the agent keeps rebuilding, then says whether they belong in `CLAUDE.md`, a skill or slash
+  command, a subagent, or a script.
+- **Timeline.** Behavior lanes (read, search, edit, test, MCP, subagents) and context growth on one axis.
+  Click any mark to see the event's full input and output.
+- **Local only.** Everything is parsed and stored on your machine (`~/.awo/awo.db`). Nothing is sent anywhere.
+
+## Screenshots
+
+**Repos.** Every project you've used the agent in, with its sessions and total tokens.
+
+<img src="docs/screenshots/repos.jpg" alt="Repos list" width="900">
+
+**Repo.** What recurs across this repo's sessions, and every prompt grouped by session. Size bars show
+the big sessions at a glance, and a click opens the session at that prompt.
+
+<img src="docs/screenshots/repo.jpg" alt="Repo view with findings and prompts" width="900">
+
+**All repos.** Patterns that span several projects: candidates for `~/.claude/CLAUDE.md`, a personal
+skill, a subagent or a reusable script.
+
+<img src="docs/screenshots/all-repos.jpg" alt="Cross-repo findings" width="900">
+
+**Timeline.** What the agent did, step by step, and how the context grew.
+
+<img src="docs/screenshots/timeline.jpg" alt="Session timeline with event details" width="900">
+
+## Quick start
+
+**Requirements:** Go 1.25+, a C compiler (SQLite via cgo), Node 20+, and the
+[Wails v2 CLI](https://wails.io/docs/gettingstarted/installation)
+(`go install github.com/wailsapp/wails/v2/cmd/wails@latest`). Developed on macOS.
+
+### Desktop app
+
+```sh
+git clone https://github.com/zakharkiv-vitalik/sexy-agent-tuner
+cd sexy-agent-tuner/app
+wails build                       # → app/build/bin/sexy-agent-tuner.app
+open build/bin/sexy-agent-tuner.app
 ```
-JSONL ──stream──▶ session.ParseClaude ──▶ session.Session (provider-independent)
-                                              │
-                                   storage (SQLite, ~/.awo/awo.db)
-                                              │
-                                   analysis.Analyze  ── deterministic FACTS, evidence = event Seq
-                                              │
-             (next) strategy phases ─▶ LLM postmortem ─▶ recommendations ─▶ experiments
-```
 
-Deterministic analysis establishes facts; the LLM layer (Phase 5) only interprets
-a compact evidence package built from `analysis.Report`, never the raw JSONL.
+On first launch, open **Import more** and press **Import all**. The app finds your sessions in
+`~/.claude/projects` by itself. For live reload while hacking on the UI, run `wails dev`.
 
-## Packages
+### CLI
 
-| package | role |
-|---|---|
-| `internal/session` | domain model (`Session`, `Event`, `ToolCall`, `Usage`) + Claude Code adapter. Streams line by line, dedupes usage of assistant messages split across lines, joins tool results to calls, pulls in `<id>/subagents/*.jsonl`. Malformed lines become `Warnings`. |
-| `internal/storage` | SQLite, one `events` table (kind-tagged rows), schema embedded, re-import replaces. |
-| `internal/analysis` | `Classify` maps tool calls to behavior (read/search/edit/test/mcp/…) incl. Bash equivalents (`cat`, `sed -n`, `grep -r`, heredoc writes, `go test`…). `Analyze` computes tokens, tools, files, tests, MCP, failures, timeline. |
-| `internal/insight` | Improvement suggestions from deterministic rules. Each finding keeps the measured FACT apart from the HYPOTHESIS, with a copyable snippet, expected benefit, possible downside, confidence and evidence seqs. `Across` works over many sessions: instructions you keep retyping (→ CLAUDE.md or skill/slash command), files every session re-explores (→ CLAUDE.md map), identical tool chains (→ subagent, skill or script). |
-| `cmd/sat` | Cobra CLI. |
-
-Event kinds: `user_prompt`, `model_call` (carries usage), `assistant_text`, `tool_call` (carries joined result).
-
-## Commands
-
-```
+```sh
+cd app && wails build && cd ..    # once: the Go module embeds the built frontend
 go build -o bin/sat ./cmd/sat
-bin/sat import ~/.claude/projects/<project>/<session>.jsonl
-bin/sat sessions
-bin/sat show <id-prefix>             # metrics report
-bin/sat show <id-prefix> --timeline  # chronological trajectory
-bin/sat show <id-prefix> --json      # full report for tooling / GUI
-bin/sat insights [--project <dir>]   # patterns recurring across all imported sessions
+
+bin/sat import ~/.claude/projects/*/*.jsonl
+bin/sat sessions                  # list imported sessions
+bin/sat show <id-prefix>          # metrics + findings for one session
+bin/sat show <id-prefix> --timeline
+bin/sat show <id-prefix> --json   # full report, for tooling
+bin/sat insights [--project DIR]  # patterns recurring across sessions
+```
+
+The CLI and the app share the same database.
+
+## What it looks for
+
+Thresholds are deliberately conservative: a short list you trust beats a long one you ignore.
+Findings are hypotheses to try on your next similar task, not proven fixes.
+
+**In one session**
+
+| Rule | Fires when | Typical fix |
+|---|---|---|
+| `redundant-reads` | files are re-read with no edit in between | key-files map in the prompt or `CLAUDE.md` |
+| `broad-search` | repo-wide greps/globs before knowing where to look | name a starting point, or trace from a known entry point |
+| `exploration-heavy` | most tokens go to exploring before the first edit | Explore subagent or a plan-first step |
+| `large-outputs` | tool results over ~5k tokens each | `head`/`grep`/`--stat`, read by line range |
+| `test-failures` | repeated fix → test → fail cycles | ask the agent to explain each failure before changing code |
+| `no-tests` | code changed but no tests were run | put the verification command in the prompt or `CLAUDE.md` |
+| `repeated-calls` | the exact same tool call runs more than once | have the agent note key findings instead of re-running |
+| `heavy-turn` | one prompt consumed most of the session | goal / expected result / done-when |
+| `mcp-before-edit` | external systems queried before a code-level hypothesis | ask for a hypothesis before querying |
+| `mcp-heavy` | most of the work goes step by step through one MCP server | a script or skill for the routine |
+
+**Across sessions and repos**
+
+| Rule | Fires when | Suggests |
+|---|---|---|
+| `repeated-instructions` | the same sentences appear in your prompts in 3+ sessions | in most sessions: `CLAUDE.md` (user-level if across repos); otherwise a skill or slash command |
+| `repeated-exploration` | the same files are read before the first edit in 3+ sessions | a key-files map in the project's `CLAUDE.md` |
+| `repeated-chain` | the same 3-step tool sequence runs in 3+ sessions | read-only: subagent · with edits: skill · commands: script or hook |
+
+## How it works
+
+```
+~/.claude/projects/**/*.jsonl
+        │  stream line by line, dedupe split messages, join tool results, pull in subagents
+        ▼
+session.Session            provider-independent model: user_prompt · model_call · assistant_text · tool_call
+        │
+storage (SQLite)           one events table, re-import replaces
+        │
+analysis.Analyze           deterministic facts: tokens, tools, files, tests, MCP, failures, timeline
+        │                  every fact points at event seqs as evidence
+insight.Generate / Across  rules → findings (fact · hypothesis · snippet · benefit · downside · evidence)
+        │
+CLI (cmd/sat)  ·  desktop app (app/, Wails + Svelte)
+```
+
+| Package | Role |
+|---|---|
+| `internal/session` | Domain model + Claude Code adapter. Malformed lines become warnings instead of failures. |
+| `internal/storage` | SQLite store, schema embedded. |
+| `internal/analysis` | `Classify` maps tool calls to behavior, including Bash equivalents (`cat`, `sed -n`, `grep -r`, heredoc writes, `go test`…). `Analyze` builds the report. |
+| `internal/insight` | Per-session rules (`Generate`) and cross-session rules (`Across`). |
+| `cmd/sat` | Cobra CLI. |
+| `app` | Wails desktop app; `app/frontend` is Svelte 5. |
+
+## Limits
+
+- Claude Code is the only supported agent so far. The session model is provider-independent, so
+  other agents need only an adapter.
+- Cross-session rules match exact sentences (4+ words). Rephrased instructions aren't caught yet.
+- Bash commands are classified with a whitespace tokenizer, not a real shell parser.
+- MCP relevance is always `unknown`: metrics alone can't tell whether a call was needed.
+
+## Roadmap
+
+- LLM postmortem over a compact evidence package (never the raw logs)
+- Fuzzy matching of similar prompts across sessions
+- Experiments: compare sessions before and after a prompt or `CLAUDE.md` change
+
+```sh
 go test ./...
 ```
-
-## Known limits (deliberate)
-
-- Bash classification uses a whitespace tokenizer, not a shell parser.
-- MCP relevance is always `unknown` until strategy reconstruction can judge it.
-- Analysis is recomputed on demand, not stored; store it when the GUI needs history.
-
-## Desktop app (Wails + Svelte)
-
-```
-cd app && wails build          # → app/build/bin/sat.app
-cd app && wails dev            # live reload; also serves the UI at http://localhost:34115
-```
-
-Screens: **Repos** (imported sessions grouped by project; import discovered sessions one by one or all at once),
-**Repo** (patterns recurring across its sessions + every prompt, grouped by session; a click opens the session at that prompt),
-**All repos** (patterns spanning several repos: user-level CLAUDE.md, personal skills, subagents, scripts),
-**Session → Overview** (key numbers and top findings; the rest under Details), **Timeline** (behavior lanes + context
-growth; click a mark or row for the event's full input/output), **Tools**.
-The GUI and CLI share `~/.awo/awo.db`. `go build ./...` needs `app/frontend/dist` built once.
