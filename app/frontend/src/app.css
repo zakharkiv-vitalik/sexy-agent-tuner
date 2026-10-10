@@ -36,12 +36,18 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {
-  /* two doodle layers with co-prime sizes so the tile grid doesn't show */
-  background: url('/doodles.svg') 0 0 / 420px repeat, url('/doodles.svg') 150px 95px / 290px repeat, radial-gradient(1200px 600px at 85% -10%, rgb(255 62 165 / .10), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, rgb(57 255 136 / .07), transparent 60%), var(--surface-0);
-  background-attachment: fixed;
+  background: var(--surface-0);
   color: var(--text-primary);
   font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+/* Doodle background on its own fixed layer, so it can be softly blurred without touching content.
+   Two layers with co-prime sizes so the tile grid doesn't show. */
+body::before {
+  content: ''; position: fixed; inset: -8px; z-index: -1; pointer-events: none;
+  background: url('/doodles.svg') 0 0 / 420px repeat, url('/doodles.svg') 150px 95px / 290px repeat,
+    radial-gradient(1200px 600px at 85% -10%, rgb(255 62 165 / .10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgb(57 255 136 / .07), transparent 60%);
+  filter: blur(1.2px);
 }
 #app { height: 100%; }
 button {

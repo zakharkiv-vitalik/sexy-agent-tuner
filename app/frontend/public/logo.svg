@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Sexy Agent Tuner app icon: a neon robot agent with heart eyes and a tuning-dial antenna. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1329"/>
+      <stop offset="1" stop-color="#08060d"/>
+    </linearGradient>
+    <radialGradient id="haze" cx=".5" cy=".42" r=".55">
+      <stop offset="0" stop-color="#ff3ea5" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#ff3ea5" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- macOS icon grid: 824px body with 100px margins -->
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#haze)"/>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="185" fill="none" stroke="#ff7fbf" stroke-opacity=".18" stroke-width="3"/>
+
+  <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- antenna with a tuning dial -->
+    <path d="M512 382 V 292" stroke="#3ec5ff" stroke-width="22"/>
+    <circle cx="512" cy="250" r="44" stroke="#3ec5ff" stroke-width="22"/>
+    <path d="M512 250 L 536 222" stroke="#3ec5ff" stroke-width="16"/>
+
+    <!-- tuner knobs as ears -->
+    <rect x="236" y="500" width="54" height="120" rx="20" stroke="#3ec5ff" stroke-width="20"/>
+    <rect x="734" y="500" width="54" height="120" rx="20" stroke="#3ec5ff" stroke-width="20"/>
+
+    <!-- head -->
+    <rect x="290" y="382" width="444" height="356" rx="96" fill="#120c1c" stroke="#ff7fbf" stroke-width="26"/>
+
+    <!-- heart eyes -->
+    <path d="M418 596 C 360 556, 352 500, 392 492 C 410 488, 418 502, 418 512 C 418 502, 426 488, 444 492 C 484 500, 476 556, 418 596 Z"
+      fill="#ff3ea5" stroke="#ff3ea5" stroke-width="10"/>
+    <path d="M606 596 C 548 556, 540 500, 580 492 C 598 488, 606 502, 606 512 C 606 502, 614 488, 632 492 C 672 500, 664 556, 606 596 Z"
+      fill="#ff3ea5" stroke="#ff3ea5" stroke-width="10"/>
+
+    <!-- smile -->
+    <path d="M440 650 Q 512 700 584 650" stroke="#39ff88" stroke-width="22"/>
+  </g>
+
+  <!-- sparkle -->
+  <path d="M760 300 l10 -28 l10 28 l28 10 l-28 10 l-10 28 l-10 -28 l-28 -10 Z" fill="#ffd23e" opacity=".9"/>
+</svg>

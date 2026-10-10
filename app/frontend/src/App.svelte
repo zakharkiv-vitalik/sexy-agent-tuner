@@ -22,7 +22,7 @@
 
 <div class="shell">
   <header>
-    <button class="brand" onclick={() => go('repos')}>Sexy Agent Tuner</button>
+    <button class="brand" onclick={() => go('repos')}><img src="/logo.svg" alt="" width="22" height="22" />Sexy Agent Tuner</button>
     {#each [['repos', 'Repos'], ['global', 'All repos']] as [k, label]}
       <button class="nav" class:active={!openId && !repo && page === k} onclick={() => go(k as typeof page)}>{label}</button>
     {/each}
@@ -61,11 +61,8 @@
     display: flex; align-items: center; gap: 8px; padding: 8px 16px;
     border-bottom: 1px solid var(--border); background: rgb(7 6 11 / .7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
-  .brand {
-    border: none; background: linear-gradient(90deg, var(--pink), var(--green) 55%, var(--blue)); -webkit-background-clip: text; background-clip: text;
-    color: transparent; font-weight: 800; letter-spacing: .02em; padding: 0; margin-right: 8px;
-    filter: drop-shadow(0 0 6px rgb(255 62 165 / .55));
-  }
+  .brand { display: flex; align-items: center; gap: 7px; border: none; background: none; color: #ff7fbf; font-weight: 500; padding: 0; margin-right: 8px; }
+  .brand img { margin: -4px -2px -4px -4px; } /* the icon's own transparent margin */
   .brand:hover { background: none; }
   .nav { border: none; background: none; color: var(--text-secondary); padding: 2px 8px; }
   .nav:hover { color: var(--text-primary); }
