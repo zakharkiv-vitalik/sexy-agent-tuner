@@ -10,6 +10,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -30,6 +31,9 @@ func main() {
 		OnShutdown:       app.shutdown,
 		Bind:             []any{app},
 		Menu:             appMenu(app),
+		// Wails only marks the window zoomable when Mac options are set; without
+		// them the green button is greyed out and full screen can't be entered.
+		Mac: &mac.Options{},
 	})
 	if err != nil {
 		log.Fatal(err)
