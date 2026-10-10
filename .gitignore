@@ -1,0 +1,12 @@
+bin/
+*.db
+app/build/bin/
+app/frontend/node_modules/
+app/frontend/dist/*
+!app/frontend/dist/.gitkeep
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# per-machine Claude Code settings
+.claude/settings.local.json

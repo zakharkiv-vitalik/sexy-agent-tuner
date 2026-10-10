@@ -1,0 +1,75 @@
+:root {
+  color-scheme: dark;
+  /* ink surfaces with a blue-green tint; borders barely above the surface */
+  --surface-0: #0b1215;
+  --surface-1: #101a1e;
+  --surface-2: #17242a;
+  --border: #1d2c32;
+  --grid: #16222788;
+  --text-primary: #e4eef0;
+  --text-secondary: #9db2b8;
+  --text-muted: #71868d;
+  --accent: #34d399;   /* emerald: actions, active state */
+  --accent-ink: #04130d;
+  --link: #60a5fa;     /* blue: evidence refs, selection */
+  --critical: #f87171;
+  /* lane colors: cool hues for behavior, amber kept for tests so it reads as a check */
+  --lane-read: #60a5fa;
+  --lane-search: #22c3d6;
+  --lane-edit: #34d399;
+  --lane-test: #e8b341;
+  --lane-mcp: #c08cf2;
+  --lane-delegate: #818cf8;
+  --lane-other: #4f6168;
+  --lane-prompt: #e4eef0;
+  --seq: #60a5fa;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+#app { height: 100%; }
+button {
+  font: inherit; color: inherit; cursor: pointer;
+  background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover { background: var(--surface-2); border-color: var(--surface-2); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+button.primary:hover { filter: brightness(1.08); }
+input[type=checkbox] { accent-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+::selection { background: color-mix(in srgb, var(--link) 35%, transparent); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 5px; border: 2px solid var(--surface-0); }
+::-webkit-scrollbar-track { background: transparent; }
+button:disabled { opacity: .5; cursor: default; }
+input[type=search], input[type=text] {
+  font: inherit; color: inherit; background: var(--surface-1);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;
+}
+table { border-collapse: collapse; width: 100%; }
+th { text-align: left; font-weight: 500; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); padding: 6px 8px; }
+td { border-bottom: 1px solid var(--grid); padding: 5px 8px; vertical-align: top; }
+tr.row:hover td { background: var(--surface-2); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.muted { color: var(--text-muted); }
+.secondary { color: var(--text-secondary); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+h2 { font-size: 13px; font-weight: 600; letter-spacing: .01em; margin: 0 0 8px; }
+/* collapsible section: a one-line summary that opens on click */
+details.fold > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::before { content: '▸'; color: var(--accent); width: 10px; flex: none; }
+details.fold[open] > summary::before { content: '▾'; }
+.ref {
+  font: 11px ui-monospace, Menlo, monospace; padding: 0 5px; border-radius: 4px; margin: 0 3px 3px 0;
+  color: var(--link); background: color-mix(in srgb, var(--link) 10%, transparent); border-color: transparent;
+}
+.ref:hover { background: color-mix(in srgb, var(--link) 22%, transparent); border-color: transparent; }
+.err { color: var(--critical); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "sexy-agent-tuner",
+  "outputfilename": "sexy-agent-tuner",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "vitaliy zakharkiv",
+    "email": "333716737+zakharkiv-vitalik@users.noreply.github.com"
+  }
+}
