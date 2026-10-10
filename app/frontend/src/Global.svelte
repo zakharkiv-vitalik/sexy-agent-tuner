@@ -2,6 +2,7 @@
   import { Insights } from '../wailsjs/go/main/App'
   import type { main } from '../wailsjs/go/models'
   import Findings from './Findings.svelte'
+  import PromptAI from './PromptAI.svelte'
 
   let { onOpen, onRepo }: { onOpen: (id: string, seq: number) => void; onRepo: (path: string) => void } = $props()
 
@@ -24,6 +25,8 @@
       note="Patterns that span several repos: candidates for ~/.claude/CLAUDE.md, a personal skill, a subagent or a script you reuse everywhere."
       empty="Nothing recurs across repos yet. Import more sessions to widen the sample."
     />
+
+    <PromptAI scope="" prompts={view.prompts} onOpen={onOpen} />
 
     <section class="card">
       <h2>Per repo</h2>

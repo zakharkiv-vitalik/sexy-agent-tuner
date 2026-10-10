@@ -71,7 +71,7 @@ func main() {
 		},
 	})
 
-	root.AddCommand(reportCmd(openDB), insightsCmd(openDB))
+	root.AddCommand(reportCmd(openDB), insightsCmd(openDB), analyzeCmd(openDB))
 
 	if err := root.ExecuteContext(context.Background()); err != nil {
 		os.Exit(1)

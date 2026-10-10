@@ -12,6 +12,7 @@ import (
 
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/analysis"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/insight"
+	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/llm"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/storage"
 )
 
@@ -85,6 +86,46 @@ func insightsCmd(openDB func(*cobra.Command) (*storage.DB, error)) *cobra.Comman
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "print findings as JSON")
 	cmd.Flags().StringVar(&project, "project", "", "only sessions of this project directory")
+	return cmd
+}
+
+func analyzeCmd(openDB func(*cobra.Command) (*storage.DB, error)) *cobra.Command {
+	var project string
+	var force, asJSON bool
+	cmd := &cobra.Command{
+		Use:   "analyze",
+		Short: "Analyze your prompts with Claude (sends prompt text to the Anthropic API)",
+		Long: "Sends the text of your prompts (one repo with --project, otherwise all repos) and session sizes to the\n" +
+			"Anthropic API and suggests what to move into CLAUDE.md, skills, slash commands, subagents or scripts.\n" +
+			"Needs ANTHROPIC_API_KEY or a key in " + llm.KeyPath() + ". An unchanged prompt set reuses the stored result.",
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			db, err := openDB(cmd)
+			if err != nil {
+				return err
+			}
+			defer db.Close()
+			r, err := llm.Analyze(cmd.Context(), db, project, force)
+			if err != nil {
+				return err
+			}
+			if asJSON {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				return enc.Encode(r)
+			}
+			from := "fresh"
+			if r.Cached {
+				from = "cached, use --force to re-run"
+			}
+			fmt.Printf("%s analyzed %d of %d prompts (%s)\n", r.Model, r.Analyzed, r.Total, from)
+			printFindings(os.Stdout, r.Findings)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&project, "project", "", "only prompts of this project directory")
+	cmd.Flags().BoolVar(&force, "force", false, "call the API even if the prompt set is unchanged")
+	cmd.Flags().BoolVar(&asJSON, "json", false, "print the result as JSON")
 	return cmd
 }
 

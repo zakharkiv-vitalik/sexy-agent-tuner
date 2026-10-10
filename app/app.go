@@ -16,6 +16,7 @@ import (
 
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/analysis"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/insight"
+	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/llm"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/session"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/storage"
 )
@@ -256,6 +257,7 @@ type RepoFindings struct {
 type GlobalView struct {
 	Findings []insight.Finding `json:"findings"`
 	Repos    []RepoFindings    `json:"repos"`
+	Prompts  int               `json:"prompts"` // human prompts across all repos
 }
 
 func (a *App) Insights() (*GlobalView, error) {
@@ -270,6 +272,13 @@ func (a *App) Insights() (*GlobalView, error) {
 		byProject[s.Project] = append(byProject[s.Project], s)
 	}
 	v := &GlobalView{}
+	for _, s := range ss {
+		for _, e := range s.Events {
+			if e.Kind == session.KindUserPrompt && e.Agent == "" {
+				v.Prompts++
+			}
+		}
+	}
 	for _, f := range insight.Across(ss) {
 		seen := map[string]bool{}
 		for _, ref := range f.Sessions {
@@ -286,6 +295,29 @@ func (a *App) Insights() (*GlobalView, error) {
 	}
 	slices.SortFunc(v.Repos, func(x, y RepoFindings) int { return cmp.Or(cmp.Compare(y.Count, x.Count), cmp.Compare(x.Name, y.Name)) })
 	return v, nil
+}
+
+// PromptAnalysis is the stored LLM analysis of a scope (repo path, or "" for
+// all repos), or nil. It never calls the API.
+func (a *App) PromptAnalysis(scope string) (*llm.Result, error) {
+	return llm.Cached(a.ctx, a.db, scope)
+}
+
+// AnalyzePrompts sends the scope's prompts to Claude. It is only ever called
+// from an explicit button, since it sends prompt text off the machine.
+func (a *App) AnalyzePrompts(scope string, force bool) (*llm.Result, error) {
+	return llm.Analyze(a.ctx, a.db, scope, force)
+}
+
+// LLMStatus tells the UI whether an analysis can run and where the key goes.
+type LLMStatus struct {
+	HasKey  bool   `json:"hasKey"`
+	KeyPath string `json:"keyPath"`
+	Model   string `json:"model"`
+}
+
+func (a *App) LLMStatus() LLMStatus {
+	return LLMStatus{HasKey: llm.HasAPIKey(), KeyPath: llm.KeyPath(), Model: llm.Model}
 }
 
 // EventDetail is the full content of one event, loaded on demand.

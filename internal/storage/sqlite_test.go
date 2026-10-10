@@ -2,9 +2,11 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/session"
 )
@@ -56,5 +58,46 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 	}
 	if _, err := db.LoadSession(ctx, "missing"); !errors.Is(err, ErrNotFound) {
 		t.Errorf("missing session err = %v", err)
+	}
+}
+
+func TestAnalysisAndPrompts(t *testing.T) {
+	ctx := context.Background()
+	db, err := Open(ctx, filepath.Join(t.TempDir(), "awo.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	if a, err := db.LoadAnalysis(ctx, "/r"); a != nil || err != nil {
+		t.Fatalf("empty store: %v, %v", a, err)
+	}
+	for _, findings := range []string{`[{"rule":"a"}]`, `[{"rule":"b"}]`} { // second save replaces
+		if err := db.SaveAnalysis(ctx, Analysis{Scope: "/r", InputHash: "h", Model: "m", CreatedAt: time.Now(),
+			Analyzed: 2, Total: 3, Findings: json.RawMessage(findings)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	a, err := db.LoadAnalysis(ctx, "/r")
+	if err != nil || a == nil || string(a.Findings) != `[{"rule":"b"}]` || a.Analyzed != 2 || a.Total != 3 || a.CreatedAt.IsZero() {
+		t.Fatalf("analysis = %+v, %v", a, err)
+	}
+
+	s, err := session.ImportClaudeFile("../session/testdata/valid_to_9999.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SaveSession(ctx, s); err != nil {
+		t.Fatal(err)
+	}
+	all, err := db.ListPrompts(ctx, "")
+	if err != nil || len(all) == 0 {
+		t.Fatalf("all prompts = %v, %v", all, err)
+	}
+	if mine, _ := db.ListPrompts(ctx, s.Project); len(mine) != len(all) {
+		t.Errorf("project prompts = %d, want %d", len(mine), len(all))
+	}
+	if none, _ := db.ListPrompts(ctx, "/elsewhere"); len(none) != 0 {
+		t.Errorf("other project prompts = %d", len(none))
 	}
 }

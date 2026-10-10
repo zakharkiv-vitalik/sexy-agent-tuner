@@ -38,3 +38,15 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE INDEX IF NOT EXISTS events_ts   ON events(session_id, ts);
 CREATE INDEX IF NOT EXISTS events_tool ON events(tool_name);
 CREATE INDEX IF NOT EXISTS events_kind ON events(kind);
+
+-- Latest LLM prompt analysis per scope (repo path, or '' for all repos).
+-- input_hash lets an unchanged prompt package reuse the stored result.
+CREATE TABLE IF NOT EXISTS analyses (
+    scope      TEXT PRIMARY KEY,
+    input_hash TEXT NOT NULL,
+    model      TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    analyzed   INTEGER NOT NULL,
+    total      INTEGER NOT NULL,
+    findings   TEXT NOT NULL  -- JSON array of insight findings
+);

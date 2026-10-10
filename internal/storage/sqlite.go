@@ -200,13 +200,14 @@ type Prompt struct {
 	Text      string
 }
 
-// ListPrompts returns the human prompts of a project's sessions, newest first.
+// ListPrompts returns the human prompts of a project's sessions, or of all
+// sessions when project is "", newest first.
 func (d *DB) ListPrompts(ctx context.Context, project string) ([]Prompt, error) {
 	rows, err := d.db.QueryContext(ctx, `
 		SELECT e.session_id, e.seq, e.ts, e.text
 		FROM events e JOIN sessions s ON s.id = e.session_id
-		WHERE s.project = ? AND e.kind = 'user_prompt' AND e.agent = ''
-		ORDER BY e.ts DESC, e.seq DESC`, project)
+		WHERE (? = '' OR s.project = ?) AND e.kind = 'user_prompt' AND e.agent = ''
+		ORDER BY e.ts DESC, e.seq DESC`, project, project)
 	if err != nil {
 		return nil, err
 	}
@@ -222,6 +223,40 @@ func (d *DB) ListPrompts(ctx context.Context, project string) ([]Prompt, error) 
 		out = append(out, p)
 	}
 	return out, rows.Err()
+}
+
+// Analysis is a stored LLM prompt analysis of one scope.
+type Analysis struct {
+	Scope, InputHash, Model string
+	CreatedAt               time.Time
+	Analyzed, Total         int
+	Findings                json.RawMessage
+}
+
+// SaveAnalysis replaces the stored analysis of a.Scope.
+func (d *DB) SaveAnalysis(ctx context.Context, a Analysis) error {
+	_, err := d.db.ExecContext(ctx, `
+		INSERT OR REPLACE INTO analyses (scope, input_hash, model, created_at, analyzed, total, findings)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`, a.Scope, a.InputHash, a.Model, ts(a.CreatedAt), a.Analyzed, a.Total, string(a.Findings))
+	return err
+}
+
+// LoadAnalysis returns the stored analysis of scope, or nil when there is none.
+func (d *DB) LoadAnalysis(ctx context.Context, scope string) (*Analysis, error) {
+	a := Analysis{Scope: scope}
+	var created sql.NullString
+	var findings string
+	err := d.db.QueryRowContext(ctx, `
+		SELECT input_hash, model, created_at, analyzed, total, findings FROM analyses WHERE scope = ?`, scope).
+		Scan(&a.InputHash, &a.Model, &created, &a.Analyzed, &a.Total, &findings)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	a.CreatedAt, a.Findings = parseTS(created), json.RawMessage(findings)
+	return &a, nil
 }
 
 // LoadSessions reads every session, or only those of project when it is set.

@@ -26,6 +26,10 @@
     workflow: 'Workflow',
     tests: 'Tests',
     'tool-output': 'Tool output',
+    skill: 'Skill',
+    'slash-command': 'Slash command',
+    subagent: 'Subagent',
+    script: 'Script / hook',
   }
 
   let showAll = $state(false)
