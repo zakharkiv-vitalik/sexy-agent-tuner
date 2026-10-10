@@ -184,6 +184,7 @@ export namespace analysis {
 	    IsError: boolean;
 	    Duration: number;
 	    Context: number;
+	    Name: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new TimelineEntry(source);
@@ -200,6 +201,7 @@ export namespace analysis {
 	        this.IsError = source["IsError"];
 	        this.Duration = source["Duration"];
 	        this.Context = source["Context"];
+	        this.Name = source["Name"];
 	    }
 	}
 	export class TestStats {

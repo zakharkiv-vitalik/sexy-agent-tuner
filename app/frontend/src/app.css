@@ -28,7 +28,9 @@
   --lane-edit: #39ff88;
   --lane-test: #ffd23e;
   --lane-mcp: #ff3ea5;
-  --lane-delegate: #7c8cff;
+  --lane-skill: #ff9f43;
+  --lane-subagent: #7c8cff;
+  --lane-command: #e7a6ff;
   --lane-other: #5d5672;
   --lane-prompt: #f4efff;
   --seq: #3ec5ff;

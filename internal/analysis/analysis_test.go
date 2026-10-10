@@ -137,3 +137,28 @@ func TestRedundantReadsIgnoreRereadAfterEdit(t *testing.T) {
 		})
 	}
 }
+
+func TestTimelineNames(t *testing.T) {
+	tool := func(name, input string) session.Event {
+		return session.Event{Kind: session.KindToolCall, Tool: &session.ToolCall{Name: name, Input: json.RawMessage(input)}}
+	}
+	s := &session.Session{Project: "/p", Events: []session.Event{
+		{Kind: session.KindUserPrompt, Text: "/go-code-review ./internal"},
+		{Kind: session.KindUserPrompt, Text: "plain prompt"},
+		tool("Skill", `{"skill":"dataviz"}`),
+		tool("Agent", `{"subagent_type":"Explore","description":"find the handler"}`),
+		tool("mcp__postgres__query", `{"sql":"select 1"}`),
+		tool("Read", `{"file_path":"/p/a.go"}`),
+	}}
+	for i := range s.Events {
+		s.Events[i].Seq = i
+	}
+	var got []string
+	for _, e := range Analyze(s).Timeline {
+		got = append(got, e.Name)
+	}
+	want := []string{"/go-code-review", "", "dataviz", "Explore", "postgres", ""}
+	if !slices.Equal(got, want) {
+		t.Errorf("names = %q, want %q", got, want)
+	}
+}

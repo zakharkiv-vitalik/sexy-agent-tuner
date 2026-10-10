@@ -44,6 +44,39 @@
   const laneY = (l: Lane) => TOP + lanes.findIndex(x => x.id === l) * LANE_H + LANE_H / 2
   const ctxY = (c: number) => ctxTop + CTX_H - (c / maxCtx) * CTX_H
 
+  // Name tags (skill, subagent type, MCP server, slash command) on the first mark
+  // of a run; a tag that would overlap the previous one in its lane is skipped.
+  const tags = $derived.by(() => {
+    const out: { x: number; y: number; text: string; lane: Lane }[] = []
+    const end: Partial<Record<Lane, number>> = {}, last: Partial<Record<Lane, string>> = {}
+    for (const p of points) {
+      const name = p.e.Name
+      if (!name || p.e.Agent) continue
+      const x = xOf(p) + 7, prev = end[p.lane] ?? -Infinity
+      if (x < prev + 6 || (last[p.lane] === name && x < prev + 120)) continue
+      out.push({ x, y: laneY(p.lane) + 3.5, text: name, lane: p.lane })
+      end[p.lane] = x + name.length * 5.8
+      last[p.lane] = name
+    }
+    return out
+  })
+
+  // Subagent spans: from a subagent's first to last step, named after the call that launched it.
+  const spans = $derived.by(() => {
+    if (!lanes.some(l => l.id === 'subagent')) return []
+    const by = new Map<string, { x0: number; x1: number; steps: number; name: string }>()
+    let launched = 'subagent'
+    for (const p of points) {
+      if (!p.e.Agent) {
+        if (p.lane === 'subagent') launched = p.e.Name || 'subagent'
+        continue
+      }
+      const x = xOf(p), s = by.get(p.e.Agent)
+      if (s) { s.x1 = x; s.steps++ } else by.set(p.e.Agent, { x0: x, x1: x, steps: 1, name: launched })
+    }
+    return [...by.values()]
+  })
+
   const ctxPath = $derived(points.filter(p => p.e.Context > 0).map((p, k) => `${k ? 'L' : 'M'}${xOf(p).toFixed(1)},${ctxY(p.e.Context).toFixed(1)}`).join(''))
 
   const ticks = $derived.by(() => {
@@ -151,6 +184,12 @@
         <circle cx={hover.x} cy={ctxY(hover.p.e.Context)} r="4" fill="var(--seq)" stroke="var(--surface-solid)" stroke-width="2" />
       {/if}
 
+      {#each spans as sp}
+        {@const y = laneY('subagent')}
+        <rect x={sp.x0 - 4} y={y - 6} width={Math.max(sp.x1 - sp.x0 + 8, 8)} height="12" rx="6" class="span" />
+        <text x={sp.x1 + 10} y={y + 3.5} class="tag" fill="var(--lane-subagent)">{sp.steps} steps</text>
+      {/each}
+
       {#each points as p (p.e.Seq)}
         {@const x = xOf(p)}
         {@const y = laneY(p.lane)}
@@ -162,6 +201,10 @@
         {:else}
           <circle cx={x} cy={y} r="3.5" fill={laneColor(p.lane)} stroke="var(--surface-solid)" stroke-width="1" />
         {/if}
+      {/each}
+
+      {#each tags as t}
+        <text x={t.x} y={t.y} class="tag" fill={laneColor(t.lane)}>{t.text}</text>
       {/each}
 
       <!-- sticky-ish labels: drawn last so marks never cover them -->
@@ -280,6 +323,8 @@
   .lane { fill: var(--text-secondary); font-size: 11px; text-anchor: end; }
   .tick { fill: var(--text-muted); font-size: 10px; text-anchor: end; font-variant-numeric: tabular-nums; }
   .tick.mid { text-anchor: middle; }
+  .tag { font-size: 10px; font-weight: 500; pointer-events: none; paint-order: stroke; stroke: var(--surface-solid); stroke-width: 3px; }
+  .span { fill: var(--lane-subagent); fill-opacity: .16; stroke: var(--lane-subagent); stroke-opacity: .5; }
   .tip {
     position: absolute; width: 320px; pointer-events: none; z-index: 2;
     background: var(--surface-solid); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;

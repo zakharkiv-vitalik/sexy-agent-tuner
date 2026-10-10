@@ -53,9 +53,9 @@ func TestParseClaude(t *testing.T) {
 			kinds: []Kind{KindUserPrompt},
 		},
 		{
-			name:  "synthetic and meta prompts skipped",
+			name:  "slash command kept, synthetic and meta prompts skipped",
 			in:    `{"type":"user","message":{"role":"user","content":"<command-name>/clear</command-name>"}}` + "\n" + `{"type":"user","isMeta":true,"message":{"role":"user","content":"x"}}` + "\n" + `{"type":"user","message":{"role":"user","content":"<task-notification><task-id>a1</task-id></task-notification>"}}`,
-			kinds: nil,
+			kinds: []Kind{KindUserPrompt},
 		},
 		{
 			name:     "malformed line is a warning, parsing continues",
@@ -127,4 +127,23 @@ func toStrings(ks []Kind) []string {
 		out[i] = string(k)
 	}
 	return out
+}
+
+func TestPromptText(t *testing.T) {
+	tests := []struct {
+		in, want string
+		ok       bool
+	}{
+		{"fix the bug", "fix the bug", true},
+		{"<command-message>go-code-review</command-message>\n<command-name>/go-code-review</command-name>\n<command-args>./internal</command-args>", "/go-code-review ./internal", true},
+		{"<command-name>/clear</command-name>\n<command-message>clear</command-message>\n<command-args></command-args>", "/clear", true},
+		{"<local-command-stdout>done</local-command-stdout>", "", false},
+		{"<bash-input>ls</bash-input>", "", false},
+	}
+	for _, tt := range tests {
+		got, ok := promptText(tt.in)
+		if ok != tt.ok || (ok && got != tt.want) {
+			t.Errorf("promptText(%q) = %q, %v; want %q, %v", tt.in, got, ok, tt.want, tt.ok)
+		}
+	}
 }

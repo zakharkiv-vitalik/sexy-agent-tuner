@@ -160,8 +160,8 @@ func (s *Session) handle(l claudeLine, agent string, pending map[string]int, see
 	// User content is either a plain string (a prompt) or a list of blocks.
 	var text string
 	if json.Unmarshal(m.Content, &text) == nil {
-		if l.Type == "user" && !l.IsMeta && !isSyntheticPrompt(text) {
-			add(Event{Kind: KindUserPrompt, Text: truncate(text)})
+		if p, ok := promptText(text); ok && l.Type == "user" && !l.IsMeta {
+			add(Event{Kind: KindUserPrompt, Text: truncate(p)})
 		}
 		return
 	}
@@ -183,8 +183,8 @@ func (s *Session) handle(l claudeLine, agent string, pending map[string]int, see
 		case "text":
 			if l.Type == "assistant" {
 				add(Event{Kind: KindAssistantText, MessageID: m.ID, Text: truncate(b.Text)})
-			} else if !l.IsMeta && !isSyntheticPrompt(b.Text) {
-				add(Event{Kind: KindUserPrompt, Text: truncate(b.Text)})
+			} else if p, ok := promptText(b.Text); ok && !l.IsMeta {
+				add(Event{Kind: KindUserPrompt, Text: truncate(p)})
 			}
 		case "tool_use":
 			pending[b.ID] = len(s.Events)
@@ -223,6 +223,26 @@ func resultText(raw json.RawMessage) string {
 		}
 	}
 	return b.String()
+}
+
+// promptText returns what the human typed: a slash command is recorded as
+// <command-name>/x</command-name><command-args>…</command-args> and comes back
+// as "/x …"; other harness-injected text returns ok=false.
+func promptText(t string) (string, bool) {
+	if name := between(t, "<command-name>", "</command-name>"); name != "" {
+		cmd := "/" + strings.TrimPrefix(strings.TrimSpace(name), "/")
+		return strings.TrimSpace(cmd + " " + strings.TrimSpace(between(t, "<command-args>", "</command-args>"))), true
+	}
+	return t, !isSyntheticPrompt(t)
+}
+
+func between(s, open, close string) string {
+	_, rest, ok := strings.Cut(s, open)
+	if !ok {
+		return ""
+	}
+	v, _, _ := strings.Cut(rest, close)
+	return v
 }
 
 // isSyntheticPrompt reports user-role text injected by the harness rather than

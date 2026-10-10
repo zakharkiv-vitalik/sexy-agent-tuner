@@ -152,6 +152,9 @@ type TimelineEntry struct {
 	IsError  bool
 	Duration time.Duration
 	Context  int // context size of the model call that produced this step
+	// Name is a short tag for steps worth naming on the chart: the skill, the
+	// subagent type, the MCP server, or the slash command. Empty otherwise.
+	Name string
 }
 
 // Analyze computes the deterministic report for a session.
@@ -198,7 +201,11 @@ func Analyze(s *session.Session) *Report {
 			r.Turns++
 			r.Tokens.ByTurn = append(r.Tokens.ByTurn, TurnTokens{Turn: r.Turns, Seq: e.Seq, Prompt: e.Text})
 			turn = &r.Tokens.ByTurn[len(r.Tokens.ByTurn)-1]
-			r.Timeline = append(r.Timeline, TimelineEntry{Seq: e.Seq, Offset: ref.Offset, Kind: e.Kind, Label: e.Text})
+			var name string
+			if cmd, ok := strings.CutPrefix(e.Text, "/"); ok {
+				name = "/" + strings.Fields(cmd + " ")[0]
+			}
+			r.Timeline = append(r.Timeline, TimelineEntry{Seq: e.Seq, Offset: ref.Offset, Kind: e.Kind, Label: e.Text, Name: name})
 
 		case session.KindModelCall:
 			u := e.Usage
@@ -235,7 +242,7 @@ func Analyze(s *session.Session) *Report {
 				ref.Label = a.Target
 			}
 			r.Timeline = append(r.Timeline, TimelineEntry{Seq: e.Seq, Offset: ref.Offset, Agent: e.Agent, Kind: e.Kind,
-				Category: a.Category, Label: ref.Label, IsError: t.IsError, Duration: t.Duration, Context: ctx})
+				Category: a.Category, Label: ref.Label, IsError: t.IsError, Duration: t.Duration, Context: ctx, Name: stepName(t, a)})
 
 			r.Tools.Calls++
 			r.Tools.ByCategory[a.Category]++
@@ -412,4 +419,19 @@ func firstLine(s string) string {
 		s = s[:i]
 	}
 	return s
+}
+
+// stepName tags skill, subagent and MCP steps for the timeline.
+func stepName(t *session.ToolCall, a Action) string {
+	switch a.Category {
+	case CatSkill:
+		return a.Target
+	case CatAgent:
+		kind, _, _ := strings.Cut(a.Target, ":")
+		return kind
+	case CatMCP:
+		server, _, _ := t.MCP()
+		return server
+	}
+	return ""
 }
