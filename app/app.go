@@ -284,7 +284,7 @@ func (a *App) Insights() (*GlobalView, error) {
 		for _, ref := range f.Sessions {
 			seen[project[ref.Session]] = true
 		}
-		if len(seen) > 1 {
+		if len(seen) > 1 || f.Target == insight.TargetSecurity { // a leaked key matters even in one repo
 			v.Findings = append(v.Findings, f)
 		}
 	}

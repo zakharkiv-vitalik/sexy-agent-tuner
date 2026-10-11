@@ -34,7 +34,7 @@ const (
 // keeps rebuilding. These are the candidates for CLAUDE.md, skills, subagents
 // or scripts. Findings carry Sessions as evidence, not Evidence.
 func Across(ss []*session.Session) []Finding {
-	out := slices.Concat(repeatedInstructions(ss), repeatedExploration(ss), repeatedChains(ss), outdatedAcross(ss))
+	out := slices.Concat(repeatedInstructions(ss), repeatedExploration(ss), repeatedChains(ss), outdatedAcross(ss), secretsAcross(ss))
 	slices.SortStableFunc(out, func(a, b Finding) int { return cmp.Compare(len(b.Sessions), len(a.Sessions)) })
 	return out
 }

@@ -79,3 +79,12 @@ func TestParse(t *testing.T) {
 		t.Error("want error for invalid JSON")
 	}
 }
+
+func TestRenderRedactsSecrets(t *testing.T) {
+	key := "f00dcafe0123456789abcdef0123456789beef42"
+	in := render([]storage.Prompt{{SessionID: "s", Seq: 0, Text: "use https://redmine.example.com/issues/1.json?key=" + key}},
+		map[string]storage.SessionSummary{"s": {ID: "s"}}, false)
+	if strings.Contains(in.text, key) || !strings.Contains(in.text, "[REDACTED:credential]") {
+		t.Errorf("secret not redacted:\n%s", in.text)
+	}
+}

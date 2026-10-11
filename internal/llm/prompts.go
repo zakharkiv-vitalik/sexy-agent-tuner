@@ -24,6 +24,7 @@ import (
 	"github.com/anthropics/anthropic-sdk-go/option"
 
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/insight"
+	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/secrets"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/storage"
 )
 
@@ -154,7 +155,8 @@ func render(prompts []storage.Prompt, bySession map[string]storage.SessionSummar
 	var kept []line
 	used := 0
 	for _, p := range prompts {
-		t := strings.Join(strings.Fields(pasted.ReplaceAllString(p.Text, " ")), " ")
+		// Credentials never leave the machine, even inside a prompt.
+		t := strings.Join(strings.Fields(pasted.ReplaceAllString(secrets.Redact(p.Text), " ")), " ")
 		if r := []rune(t); len(r) > maxPromptChars {
 			t = string(r[:maxPromptChars]) + "…"
 		}

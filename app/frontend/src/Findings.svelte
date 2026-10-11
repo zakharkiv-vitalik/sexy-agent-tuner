@@ -31,6 +31,7 @@
     subagent: 'Subagent',
     script: 'Script / hook',
     model: 'Model',
+    security: 'Security',
   }
 
   let showAll = $state(false)

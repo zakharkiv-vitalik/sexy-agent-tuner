@@ -101,6 +101,7 @@ func Generate(s *session.Session, r *analysis.Report) []Finding {
 		redundantReads, broadSearches, explorationHeavy, mcpBeforeEdit, mcpHeavy,
 		repeatedCalls, testFailures, noTests, heavyTurn, largeOutputs, freshSession,
 		outdatedModel, exploreOnTopModel, routineOnTopModel, struggleOnSmallerModel,
+		secretsInSession,
 	} {
 		if fd := rule(f); fd != nil {
 			if len(fd.Evidence) > maxEvidencePerFinding {
