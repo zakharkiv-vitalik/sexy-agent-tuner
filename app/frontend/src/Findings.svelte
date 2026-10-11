@@ -30,6 +30,7 @@
     'slash-command': 'Slash command',
     subagent: 'Subagent',
     script: 'Script / hook',
+    model: 'Model',
   }
 
   let showAll = $state(false)

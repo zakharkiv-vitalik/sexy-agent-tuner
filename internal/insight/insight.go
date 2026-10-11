@@ -63,6 +63,11 @@ const (
 	minHeavyTurnCalls     = 10
 	largeOutputBytes      = 20_000 // ≈5k tokens
 	minLargeOutputs       = 3
+	freshMinContext       = 150_000 // conversation size at the prompt worth a fresh start
+	freshMinCalls         = 8
+	freshMinWords         = 6   // shorter prompts are follow-ups ("yes, do it"), not new tasks
+	freshMinShare         = 0.2 // of the session's processed tokens
+	freshMinCarried       = 2_000_000
 	maxEvidencePerFinding = 20
 )
 
@@ -94,7 +99,8 @@ func Generate(s *session.Session, r *analysis.Report) []Finding {
 	var out []Finding
 	for _, rule := range []func(*facts) *Finding{
 		redundantReads, broadSearches, explorationHeavy, mcpBeforeEdit, mcpHeavy,
-		repeatedCalls, testFailures, noTests, heavyTurn, largeOutputs,
+		repeatedCalls, testFailures, noTests, heavyTurn, largeOutputs, freshSession,
+		outdatedModel, exploreOnTopModel, routineOnTopModel, struggleOnSmallerModel,
 	} {
 		if fd := rule(f); fd != nil {
 			if len(fd.Evidence) > maxEvidencePerFinding {
@@ -188,6 +194,9 @@ func explorationHeavy(f *facts) *Finding {
 	t := f.r.Tokens
 	if f.firstEdit < 0 || t.BeforeFirstEdit < explorationShare || f.callsFirst < minCallsBeforeEdit {
 		return nil
+	}
+	if m, _ := mainModel(f.s); tier(m) == tierTop {
+		return nil // exploreOnTopModel gives the same advice with a model-specific fix
 	}
 	tokens := int(t.BeforeFirstEdit * float64(t.Processed))
 	return &Finding{
@@ -441,6 +450,84 @@ func heavyTurn(f *facts) *Finding {
 		Downside:       "Some tasks are exploratory by nature. Over-specifying can hide a better solution.",
 		TokensInvolved: top.Processed,
 		Evidence:       []int{top.Seq},
+	}
+}
+
+// freshSession finds a substantial prompt sent on a large context: every model
+// call after it re-sends the earlier conversation. What that cost is measured;
+// whether the prompt was really a new task is the hypothesis.
+func freshSession(f *facts) *Finding {
+	type candidate struct {
+		seq, ctx, calls, carried int
+		text                     string
+	}
+	var (
+		best              candidate
+		cur               *candidate
+		baseline, lastCtx int
+		first             = true
+	)
+	closeCur := func() {
+		if cur != nil && cur.carried > best.carried && cur.ctx >= freshMinContext && cur.calls >= freshMinCalls {
+			best = *cur
+		}
+		cur = nil
+	}
+	for _, e := range f.s.Events {
+		if e.Agent != "" {
+			continue // subagents have their own context
+		}
+		switch e.Kind {
+		case session.KindUserPrompt:
+			if strings.HasPrefix(e.Text, "/") {
+				if strings.HasPrefix(e.Text, "/clear") || strings.HasPrefix(e.Text, "/compact") {
+					closeCur()
+				}
+				continue
+			}
+			if len(strings.Fields(e.Text)) < freshMinWords {
+				continue
+			}
+			closeCur()
+			if !first {
+				cur = &candidate{seq: e.Seq, ctx: lastCtx, text: e.Text}
+			}
+			first = false
+		case session.KindModelCall:
+			c := e.Usage.Context()
+			if baseline == 0 {
+				baseline = c // what a fresh session starts with: system prompt, tools, CLAUDE.md
+			}
+			if cur != nil {
+				if c < cur.ctx*6/10 {
+					closeCur() // the context was reset or compacted
+				} else {
+					cur.calls++
+					cur.carried += max(cur.ctx-baseline, 0)
+				}
+			}
+			lastCtx = c
+		}
+	}
+	closeCur()
+	processed := f.r.Tokens.Processed
+	if best.carried < freshMinCarried || float64(best.carried) < freshMinShare*float64(processed) {
+		return nil
+	}
+	return &Finding{
+		Rule: "fresh-session", Target: TargetWorkflow, Confidence: "low",
+		Title: fmt.Sprintf("The conversation outgrew a fresh start (%s tokens carried on every step)", tok(best.ctx)),
+		Observation: fmt.Sprintf("%q was sent when the context was already %s tokens (a fresh session starts at %s). "+
+			"The %d model calls after it re-sent that history: ≈%s tokens, %.0f%% of the session.",
+			short(best.text, 80), tok(best.ctx), tok(baseline), best.calls, tok(best.carried), 100*float64(best.carried)/float64(max(processed, 1))),
+		Hypothesis: "Most of that history was likely no longer needed for this request: it was paid for on every step and " +
+			"is a source of stale assumptions.",
+		Suggestion:     "New task: start a new session (or /clear) with a short handover. Same task, long history: /compact first.",
+		Snippet:        "Context: <one line on what was just done>\nTask: <the new request>\nRelevant files: <paths>\nDone when: <check>",
+		Benefit:        fmt.Sprintf("Up to ≈%s fewer tokens for a request like this; each step starts near %s instead of %s.", tok(best.carried), tok(baseline), tok(best.ctx)),
+		Downside:       "If the request builds on the previous work, a fresh session has to rediscover it. A short handover note keeps the useful part.",
+		TokensInvolved: best.carried,
+		Evidence:       []int{best.seq},
 	}
 }
 

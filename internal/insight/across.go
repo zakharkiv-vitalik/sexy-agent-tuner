@@ -34,7 +34,7 @@ const (
 // keeps rebuilding. These are the candidates for CLAUDE.md, skills, subagents
 // or scripts. Findings carry Sessions as evidence, not Evidence.
 func Across(ss []*session.Session) []Finding {
-	out := slices.Concat(repeatedInstructions(ss), repeatedExploration(ss), repeatedChains(ss))
+	out := slices.Concat(repeatedInstructions(ss), repeatedExploration(ss), repeatedChains(ss), outdatedAcross(ss))
 	slices.SortStableFunc(out, func(a, b Finding) int { return cmp.Compare(len(b.Sessions), len(a.Sessions)) })
 	return out
 }
@@ -285,6 +285,47 @@ func repeatedChains(ss []*session.Session) []Finding {
 			f.Benefit = "One call instead of several model round trips."
 		}
 		out = append(out, f)
+	}
+	return out
+}
+
+// outdatedAcross is outdated-model over many sessions: an old model in many
+// sessions usually means a default worth changing once.
+func outdatedAcross(ss []*session.Session) []Finding {
+	seen := recurring{}
+	tokens := map[string]int{}
+	for _, s := range ss {
+		use := models(s, false)
+		total := 0
+		for _, u := range use {
+			total += u.calls
+		}
+		for m, u := range use {
+			if _, ok := upgrades[m]; ok && float64(u.calls) >= outdatedMinShare*float64(total) {
+				seen.add(m, SessionRef{s.ID, u.first})
+				tokens[m] += u.tokens
+			}
+		}
+	}
+	var out []Finding
+	for _, m := range slices.Sorted(maps.Keys(seen)) {
+		refs := seen.refs(m)
+		if len(refs) < minSessions {
+			continue
+		}
+		up := upgrades[m]
+		out = append(out, Finding{
+			Rule: "outdated-model", Target: TargetModel, Confidence: "medium",
+			Title:          fmt.Sprintf("%d sessions still run on %s", len(refs), m),
+			Observation:    fmt.Sprintf("%s did a large part of the work in %d sessions (%s tokens processed).", m, len(refs), tok(tokens[m])),
+			Hypothesis:     "It is probably a default or a habit rather than a per-task choice.",
+			Suggestion:     fmt.Sprintf("Make %s the default in ~/.claude/settings.json, or use /model %s. It is %s.", up.to, up.to, up.why),
+			Snippet:        fmt.Sprintf(`{ "model": %q }`, up.to),
+			Benefit:        "Every future session gets the newer model of the same tier.",
+			Downside:       "Prompts and CLAUDE.md tuned for the old model may land differently; check a few sessions after switching.",
+			TokensInvolved: tokens[m],
+			Sessions:       refs,
+		})
 	}
 	return out
 }

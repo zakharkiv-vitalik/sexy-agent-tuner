@@ -77,6 +77,13 @@
     return [...by.values()]
   })
 
+  // Prompts where a fresh session would have paid off (the fresh-session finding).
+  const fresh = $derived(
+    (view.findings ?? []).filter(f => f.rule === 'fresh-session').flatMap(f =>
+      (f.evidence ?? []).map(seq => ({ p: bySeq.get(seq), tip: f.observation })).filter(m => m.p),
+    ) as { p: Point; tip: string }[],
+  )
+
   const ctxPath = $derived(points.filter(p => p.e.Context > 0).map((p, k) => `${k ? 'L' : 'M'}${xOf(p).toFixed(1)},${ctxY(p.e.Context).toFixed(1)}`).join(''))
 
   const ticks = $derived.by(() => {
@@ -171,6 +178,15 @@
       <line x1={LEFT} x2={svgW - RIGHT} y1={ctxTop + CTX_H} y2={ctxTop + CTX_H} class="axis" />
       <line x1={LEFT} x2={svgW - RIGHT} y1={ctxTop} y2={ctxTop} class="grid" />
       <line x1={LEFT} x2={svgW - RIGHT} y1={ctxTop + CTX_H / 2} y2={ctxTop + CTX_H / 2} class="grid" />
+
+      {#each fresh as m}
+        {@const x = xOf(m.p)}
+        <g class="fresh">
+          <title>{m.tip}</title>
+          <line x1={x} x2={x} y1={TOP} y2={ctxTop + CTX_H} />
+          <text x={x + 5} y={ctxTop + 12}>↻ fresh start?</text>
+        </g>
+      {/each}
 
       {#if focusPoint}
         <line x1={xOf(focusPoint)} x2={xOf(focusPoint)} y1={TOP} y2={ctxTop + CTX_H} class="focus" />
@@ -323,6 +339,8 @@
   .lane { fill: var(--text-secondary); font-size: 11px; text-anchor: end; }
   .tick { fill: var(--text-muted); font-size: 10px; text-anchor: end; font-variant-numeric: tabular-nums; }
   .tick.mid { text-anchor: middle; }
+  .fresh line { stroke: var(--pink); stroke-width: 1.5; stroke-dasharray: 2 4; opacity: .8; }
+  .fresh text { fill: var(--pink); font-size: 10px; font-weight: 600; paint-order: stroke; stroke: var(--surface-solid); stroke-width: 3px; }
   .tag { font-size: 10px; font-weight: 500; pointer-events: none; paint-order: stroke; stroke: var(--surface-solid); stroke-width: 3px; }
   .span { fill: var(--lane-subagent); fill-opacity: .16; stroke: var(--lane-subagent); stroke-opacity: .5; }
   .tip {

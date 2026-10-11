@@ -145,6 +145,18 @@ Findings are hypotheses to try on your next similar task, not proven fixes.
 | `heavy-turn` | one prompt consumed most of the session | goal / expected result / done-when |
 | `mcp-before-edit` | external systems queried before a code-level hypothesis | ask for a hypothesis before querying |
 | `mcp-heavy` | most of the work goes step by step through one MCP server | a script or skill for the routine |
+| `fresh-session` | a new request starts on a large context (150k+) and the history it re-sends costs 2M+ tokens and 20%+ of the session; marked on the timeline | new task: new session or `/clear` with a short handover · same task: `/compact` |
+
+**Model choice**
+
+| Rule | Fires when | Suggests |
+|---|---|---|
+| `outdated-model` | a quarter or more of the calls ran on a model with a newer successor (also across sessions, on All repos) | the successor, via `/model` or `"model"` in `~/.claude/settings.json`, with its price |
+| `explore-on-top-model` | most tokens went to exploring before the first edit, on an Opus-tier model | an explorer subagent pinned to Haiku (ready `.claude/agents/explorer.md`) |
+| `routine-on-top-model` | a short session of mostly commands (git, tests) and few reads or edits ran on Opus | Sonnet 5.5 for routine work |
+| `struggle-on-smaller-model` | failing tests, many failed tool calls or one runaway request on Sonnet or Haiku | try Opus 5.5 or a higher effort on similar tasks |
+
+The successor and price table lives in `internal/insight/models.go` and is kept by hand.
 
 **Across sessions and repos**
 

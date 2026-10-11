@@ -27,7 +27,8 @@ func TestGenerateValidTo9999(t *testing.T) {
 	}
 	fs := Generate(s, analysis.Analyze(s))
 
-	want := []string{"broad-search", "exploration-heavy", "mcp-before-edit", "redundant-reads"}
+	// The fixture runs on claude-opus-5: outdated, and its exploration gets the model-specific rule.
+	want := []string{"broad-search", "explore-on-top-model", "mcp-before-edit", "outdated-model", "redundant-reads"}
 	if got := rules(fs); !slices.Equal(got, want) {
 		t.Fatalf("rules = %v, want %v", got, want)
 	}
@@ -206,5 +207,45 @@ func TestRules(t *testing.T) {
 				t.Errorf("rules = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestFreshSession(t *testing.T) {
+	build := func(second string, clear bool) []Finding {
+		b := newBuilder()
+		b.prompt("first task: fix the parser for split messages")
+		b.model(20_000)
+		for range 5 {
+			b.model(200_000)
+		}
+		if clear {
+			b.prompt("/clear")
+			b.model(20_000)
+		}
+		b.prompt(second)
+		for range 15 {
+			b.model(200_000)
+		}
+		var out []Finding
+		for _, f := range b.findings() {
+			if f.Rule == "fresh-session" {
+				out = append(out, f)
+			}
+		}
+		return out
+	}
+
+	fs := build("now a different task: add a timeline to the app", false)
+	if len(fs) != 1 {
+		t.Fatalf("want 1 fresh-session finding, got %d", len(fs))
+	}
+	if f := fs[0]; f.Evidence[0] != 7 || !strings.Contains(f.Observation, "200.0k") || f.TokensInvolved != 15*(200_000-20_000) {
+		t.Errorf("finding = %+v", f)
+	}
+	if fs := build("ok do it", false); len(fs) != 0 {
+		t.Error("a short follow-up is not a new request")
+	}
+	if fs := build("now a different task: add a timeline to the app", true); len(fs) != 0 {
+		t.Error("after /clear the context is fresh")
 	}
 }
