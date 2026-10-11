@@ -4,6 +4,7 @@
   import { dur, date, short, tok } from './lib/format'
   import Findings from './Findings.svelte'
   import PromptAI from './PromptAI.svelte'
+  import Changes from './Changes.svelte'
 
   let { path, onOpen }: { path: string; onOpen: (id: string, seq?: number) => void } = $props()
 
@@ -11,6 +12,7 @@
   let error = $state('')
   let query = $state('')
   let order = $state<'newest' | 'largest'>('newest')
+  let applied = $state(0) // bumps after an Apply to reload the comparison
 
   $effect(() => {
     Repo(path).then(v => (view = v)).catch(e => (error = String(e)))
@@ -51,11 +53,15 @@
       findings={view.findings}
       onOpenSession={onOpen}
       limit={3}
+      scope={view.path}
+      onApplied={() => applied++}
       note="Patterns that recur across this repo's sessions."
       empty="Nothing recurs in 3 or more sessions of this repo yet."
     />
 
-    <PromptAI scope={view.path} prompts={(view.prompts ?? []).length} onOpen={(id, seq) => onOpen(id, seq)} />
+    <PromptAI scope={view.path} prompts={(view.prompts ?? []).length} onOpen={(id, seq) => onOpen(id, seq)} onApplied={() => applied++} />
+
+    <Changes scope={view.path} version={applied} />
 
     <section class="card">
       <div class="head">

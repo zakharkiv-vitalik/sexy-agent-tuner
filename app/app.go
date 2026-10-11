@@ -15,6 +15,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/analysis"
+	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/apply"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/importer"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/insight"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/llm"
@@ -326,6 +327,55 @@ type LLMStatus struct {
 
 func (a *App) LLMStatus() LLMStatus {
 	return LLMStatus{HasKey: llm.HasAPIKey(), KeyPath: llm.KeyPath(), Model: llm.Model}
+}
+
+// PlanApply previews the file change for a finding in scope (repo path, or "" for user-level).
+func (a *App) PlanApply(f insight.Finding, scope string) (*apply.Change, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	return apply.Plan(f, scope, home)
+}
+
+// ApplyChange writes a previewed change, possibly edited by the user, and
+// records it for the before/after comparison. It only writes into known
+// repos and ~/.claude.
+func (a *App) ApplyChange(c apply.Change) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	allowed := []string{filepath.Join(home, ".claude")}
+	list, err := a.db.ListSessions(a.ctx)
+	if err != nil {
+		return err
+	}
+	for _, s := range list {
+		allowed = append(allowed, s.Project)
+	}
+	now := time.Now()
+	if err := apply.Write(c, allowed, now); err != nil {
+		return err
+	}
+	return a.db.SaveChange(a.ctx, storage.AppliedChange{Scope: c.Scope, Rule: c.Rule, Title: c.Title, Path: c.Path, AppliedAt: now})
+}
+
+// Experiments compares sessions before and after each change applied in scope.
+func (a *App) Experiments(scope string) ([]apply.Experiment, error) {
+	changes, err := a.db.ListChanges(a.ctx, scope)
+	if err != nil || len(changes) == 0 {
+		return nil, err
+	}
+	ss, err := a.db.LoadSessions(a.ctx, scope)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]apply.Experiment, 0, len(changes))
+	for _, c := range changes {
+		out = append(out, apply.Compare(ss, c))
+	}
+	return out, nil
 }
 
 // EventDetail is the full content of one event, loaded on demand.

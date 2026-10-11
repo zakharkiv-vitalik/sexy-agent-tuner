@@ -6,12 +6,20 @@ export function AnalyzePrompts(arg1, arg2) {
   return window['go']['main']['App']['AnalyzePrompts'](arg1, arg2);
 }
 
+export function ApplyChange(arg1) {
+  return window['go']['main']['App']['ApplyChange'](arg1);
+}
+
 export function Discover() {
   return window['go']['main']['App']['Discover']();
 }
 
 export function Event(arg1, arg2) {
   return window['go']['main']['App']['Event'](arg1, arg2);
+}
+
+export function Experiments(arg1) {
+  return window['go']['main']['App']['Experiments'](arg1);
 }
 
 export function Import(arg1) {
@@ -36,6 +44,10 @@ export function ListSessions() {
 
 export function OpenSession(arg1) {
   return window['go']['main']['App']['OpenSession'](arg1);
+}
+
+export function PlanApply(arg1, arg2) {
+  return window['go']['main']['App']['PlanApply'](arg1, arg2);
 }
 
 export function PromptAnalysis(arg1) {

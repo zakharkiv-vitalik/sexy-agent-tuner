@@ -5,6 +5,7 @@ import (
 	"maps"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/secrets"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/session"
@@ -20,7 +21,25 @@ type leak struct {
 	inPrompt bool
 }
 
+// scanned memoizes scanSecrets: one view (All repos) scans each session for
+// the cross-repo finding and again per repo. Keyed by what changes on re-import;
+// bounded by the number of sessions.
+var scanned sync.Map
+
 func scanSecrets(s *session.Session) leak {
+	if s.ID == "" {
+		return scan(s) // no stable identity to cache under
+	}
+	key := fmt.Sprintf("%s:%d:%d", s.ID, len(s.Events), s.FinishedAt.UnixNano())
+	if l, ok := scanned.Load(key); ok {
+		return l.(leak)
+	}
+	l := scan(s)
+	scanned.Store(key, l)
+	return l
+}
+
+func scan(s *session.Session) leak {
 	l := leak{kinds: map[string][]string{}}
 	for _, e := range s.Events {
 		texts := []string{e.Text}

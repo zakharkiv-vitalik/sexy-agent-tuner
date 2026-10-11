@@ -51,6 +51,10 @@ same request worded differently, and is held to the same standard: each finding 
   Click any mark to see the event's full input and output.
 - **AI analysis of prompts (optional).** Claude reads your prompts, groups intents you repeat even when worded
   differently, and suggests CLAUDE.md rules, skills, slash commands, subagents or scripts, each traced back to the prompts.
+- **Apply, then measure.** Most suggestions can be applied in one click: you review and edit the text, and it goes
+  into `CLAUDE.md`, a new subagent, skill or slash command, or the default model in `~/.claude/settings.json`. Each
+  applied change is tracked, and later sessions are compared with earlier ones: does the same finding come back,
+  tokens per prompt, exploration share, failed tool calls.
 - **Secrets check.** Flags API keys, tokens and passwords that ended up in your session logs (shown masked), and
   redacts them from anything the AI analysis sends.
 - **Local first.** Everything is parsed and stored on your machine (`~/.awo/awo.db`). Only the AI analysis sends
@@ -214,6 +218,7 @@ CLI (cmd/sat)  ·  desktop app (app/, Wails + Svelte)
 | `internal/insight` | Per-session rules (`Generate`) and cross-session rules (`Across`). |
 | `internal/importer` | Sync with `~/.claude/projects`: import new sessions, re-import changed ones. |
 | `internal/secrets` | Credential patterns, masking and redaction. |
+| `internal/apply` | Findings → file changes (append, create, settings) with a write guard, and the before/after comparison. |
 | `internal/llm` | AI analysis of prompts via the Anthropic Go SDK, with a JSON-schema answer and a per-scope cache. |
 | `cmd/sat` | Cobra CLI. |
 | `app` | Wails desktop app; `app/frontend` is Svelte 5. |

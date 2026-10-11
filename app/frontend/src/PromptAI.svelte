@@ -5,7 +5,7 @@
   import Findings from './Findings.svelte'
 
   // scope: a repo path, or '' for all repos.
-  let { scope, prompts, onOpen }: { scope: string; prompts: number; onOpen: (id: string, seq: number) => void } = $props()
+  let { scope, prompts, onOpen, onApplied = () => {} }: { scope: string; prompts: number; onOpen: (id: string, seq: number) => void; onApplied?: () => void } = $props()
 
   let result = $state<llm.Result | null>(null)
   let status = $state<main.LLMStatus | null>(null)
@@ -37,6 +37,8 @@
     findings={result.findings}
     onOpenSession={onOpen}
     limit={3}
+    {scope}
+    {onApplied}
     note={`AI analysis of ${result.analyzed} of ${result.total} prompts · ${result.model} · ${date(result.createdAt)}`}
     empty="Claude found nothing worth setting up in these prompts."
   />

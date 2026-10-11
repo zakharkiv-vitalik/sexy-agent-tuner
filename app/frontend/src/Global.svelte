@@ -3,11 +3,13 @@
   import type { main } from '../wailsjs/go/models'
   import Findings from './Findings.svelte'
   import PromptAI from './PromptAI.svelte'
+  import Changes from './Changes.svelte'
 
   let { onOpen, onRepo }: { onOpen: (id: string, seq: number) => void; onRepo: (path: string) => void } = $props()
 
   let view = $state<main.GlobalView | null>(null)
   let error = $state('')
+  let applied = $state(0)
 
   Insights().then(v => (view = v)).catch(e => (error = String(e)))
 </script>
@@ -22,11 +24,15 @@
       findings={view.findings}
       onOpenSession={onOpen}
       limit={3}
+      scope=""
+      onApplied={() => applied++}
       note="Patterns that span several repos: candidates for ~/.claude/CLAUDE.md, a personal skill, a subagent or a script you reuse everywhere."
       empty="Nothing recurs across repos yet. Import more sessions to widen the sample."
     />
 
-    <PromptAI scope="" prompts={view.prompts} onOpen={onOpen} />
+    <PromptAI scope="" prompts={view.prompts} onOpen={onOpen} onApplied={() => applied++} />
+
+    <Changes scope="" version={applied} />
 
     <section class="card">
       <h2>Per repo</h2>

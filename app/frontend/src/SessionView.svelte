@@ -135,7 +135,7 @@
           {/each}
         </div>
 
-        <Findings findings={view.findings} onShow={show} limit={3} />
+        <Findings findings={view.findings} onShow={show} limit={3} scope={view.project} />
 
         <details class="more fold">
           <summary>Details <span class="muted">· all metrics, exploration, tokens by turn, tests, MCP, failures</span></summary>

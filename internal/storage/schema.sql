@@ -50,3 +50,13 @@ CREATE TABLE IF NOT EXISTS analyses (
     total      INTEGER NOT NULL,
     findings   TEXT NOT NULL  -- JSON array of insight findings
 );
+
+-- Suggestions applied from the app, to compare sessions before and after.
+CREATE TABLE IF NOT EXISTS changes (
+    id         INTEGER PRIMARY KEY,
+    scope      TEXT NOT NULL,  -- repo path, or '' for user-level
+    rule       TEXT NOT NULL,
+    title      TEXT NOT NULL,
+    path       TEXT NOT NULL,
+    applied_at TEXT NOT NULL
+);

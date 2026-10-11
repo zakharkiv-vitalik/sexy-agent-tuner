@@ -278,6 +278,39 @@ func (d *DB) ImportedSources(ctx context.Context) (map[string]time.Time, error) 
 	return out, rows.Err()
 }
 
+// AppliedChange is a suggestion that was written to a file.
+type AppliedChange struct {
+	ID                       int64
+	Scope, Rule, Title, Path string
+	AppliedAt                time.Time
+}
+
+func (d *DB) SaveChange(ctx context.Context, c AppliedChange) error {
+	_, err := d.db.ExecContext(ctx, `INSERT INTO changes (scope, rule, title, path, applied_at) VALUES (?, ?, ?, ?, ?)`,
+		c.Scope, c.Rule, c.Title, c.Path, ts(c.AppliedAt))
+	return err
+}
+
+// ListChanges returns the changes applied in scope, newest first; scope "" means user-level ones.
+func (d *DB) ListChanges(ctx context.Context, scope string) ([]AppliedChange, error) {
+	rows, err := d.db.QueryContext(ctx, `SELECT id, scope, rule, title, path, applied_at FROM changes WHERE scope = ? ORDER BY applied_at DESC`, scope)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []AppliedChange
+	for rows.Next() {
+		var c AppliedChange
+		var at sql.NullString
+		if err := rows.Scan(&c.ID, &c.Scope, &c.Rule, &c.Title, &c.Path, &at); err != nil {
+			return nil, err
+		}
+		c.AppliedAt = parseTS(at)
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
 // LoadSessions reads every session, or only those of project when it is set.
 // ponytail: loads everything into memory; page or pre-aggregate if the DB grows to thousands.
 func (d *DB) LoadSessions(ctx context.Context, project string) ([]*session.Session, error) {
