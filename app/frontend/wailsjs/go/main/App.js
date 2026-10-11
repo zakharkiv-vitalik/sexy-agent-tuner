@@ -49,3 +49,7 @@ export function Repo(arg1) {
 export function Repos() {
   return window['go']['main']['App']['Repos']();
 }
+
+export function Sync() {
+  return window['go']['main']['App']['Sync']();
+}

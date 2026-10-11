@@ -51,6 +51,8 @@ same request worded differently, and is held to the same standard: each finding 
   Click any mark to see the event's full input and output.
 - **AI analysis of prompts (optional).** Claude reads your prompts, groups intents you repeat even when worded
   differently, and suggests CLAUDE.md rules, skills, slash commands, subagents or scripts, each traced back to the prompts.
+- **Secrets check.** Flags API keys, tokens and passwords that ended up in your session logs (shown masked), and
+  redacts them from anything the AI analysis sends.
 - **Local first.** Everything is parsed and stored on your machine (`~/.awo/awo.db`). Only the AI analysis sends
   anything off the machine (prompt text and session sizes, to the Anthropic API), and only when you press its button.
 
@@ -93,8 +95,9 @@ open "/Applications/Sexy Agent Tuner.app"
 Once it's in `/Applications` it shows up in Launchpad and Spotlight. To keep it in the Dock, right-click its
 icon there and choose **Options → Keep in Dock**.
 
-On first launch, open **Import more** and press **Import all**. The app finds your sessions in
-`~/.claude/projects` by itself. For live reload while hacking on the UI, run `wails dev`.
+The app imports your sessions from `~/.claude/projects` by itself: every time the Repos screen opens it pulls
+in new sessions and re-imports changed ones (a running or resumed session), which takes milliseconds when
+nothing changed. For live reload while hacking on the UI, run `wails dev`.
 
 ### CLI
 
@@ -102,7 +105,8 @@ On first launch, open **Import more** and press **Import all**. The app finds yo
 cd app && wails build && cd ..    # once: the Go module embeds the built frontend
 go build -o bin/sat ./cmd/sat
 
-bin/sat import ~/.claude/projects/*/*.jsonl
+bin/sat sync                      # import new and changed sessions from ~/.claude/projects
+bin/sat import <session.jsonl>    # or import specific files
 bin/sat sessions                  # list imported sessions
 bin/sat show <id-prefix>          # metrics + findings for one session
 bin/sat show <id-prefix> --timeline
@@ -111,7 +115,16 @@ bin/sat insights [--project DIR]  # patterns recurring across sessions
 bin/sat analyze [--project DIR]   # AI analysis of prompts (Anthropic API, see below)
 ```
 
-The CLI and the app share the same database.
+The CLI and the app share the same database. To keep it current without opening the app, run `sat sync`
+from a Claude Code `SessionEnd` hook in `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionEnd": [{ "hooks": [{ "type": "command", "command": "/path/to/sat sync --quiet" }] }]
+  }
+}
+```
 
 ### AI analysis
 
@@ -199,6 +212,8 @@ CLI (cmd/sat)  ·  desktop app (app/, Wails + Svelte)
 | `internal/storage` | SQLite store, schema embedded. |
 | `internal/analysis` | `Classify` maps tool calls to behavior, including Bash equivalents (`cat`, `sed -n`, `grep -r`, heredoc writes, `go test`…). `Analyze` builds the report. |
 | `internal/insight` | Per-session rules (`Generate`) and cross-session rules (`Across`). |
+| `internal/importer` | Sync with `~/.claude/projects`: import new sessions, re-import changed ones. |
+| `internal/secrets` | Credential patterns, masking and redaction. |
 | `internal/llm` | AI analysis of prompts via the Anthropic Go SDK, with a JSON-schema answer and a per-scope cache. |
 | `cmd/sat` | Cobra CLI. |
 | `app` | Wails desktop app; `app/frontend` is Svelte 5. |

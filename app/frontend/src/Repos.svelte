@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Repos, Discover, Import, ImportDialog } from '../wailsjs/go/main/App'
+  import { Repos, Discover, Import, ImportDialog, Sync } from '../wailsjs/go/main/App'
   import type { main } from '../wailsjs/go/models'
   import { date, short, bytes, tok } from './lib/format'
 
@@ -39,8 +39,20 @@
     }
   }
 
+  // Show what's stored right away, then pull in new and changed sessions.
+  let syncing = $state(true)
+  let synced = $state(0)
   refresh()
-  Discover().then(r => (found = r ?? [])).catch(e => (error = String(e)))
+    .then(() => Sync())
+    .then(async n => {
+      synced = n
+      if (n > 0) await refresh()
+    })
+    .catch(e => (error = String(e)))
+    .finally(() => {
+      syncing = false
+      Discover().then(r => (found = r ?? [])).catch(e => (error = String(e)))
+    })
 </script>
 
 <div class="page">
@@ -49,6 +61,7 @@
   <section class="card">
     <div class="head">
       <h2>Repos</h2>
+      <span class="muted sync">{syncing ? 'Syncing new sessions…' : synced ? `${synced} session${synced === 1 ? '' : 's'} synced` : 'Up to date'}</span>
       <button onclick={() => run('dialog', ImportDialog)} disabled={busy !== null}>
         {busy === 'dialog' ? 'Importing…' : 'Import file…'}
       </button>
@@ -128,4 +141,5 @@
   .row:hover td { background: var(--surface-2); }
   .nowrap { white-space: nowrap; }
   .path { font-size: 11px; margin-left: 6px; }
+  .sync { font-size: 12px; }
 </style>

@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/importer"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/session"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/storage"
 )
@@ -47,6 +48,32 @@ func main() {
 			return nil
 		},
 	})
+
+	var syncRoot string
+	var quiet bool
+	syncCmd := &cobra.Command{
+		Use:   "sync",
+		Short: "Import new and changed Claude Code sessions (safe to run from a SessionEnd hook)",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			db, err := openDB(cmd)
+			if err != nil {
+				return err
+			}
+			defer db.Close()
+			r, err := importer.Sync(cmd.Context(), db, syncRoot)
+			if err != nil {
+				return err
+			}
+			if !quiet {
+				fmt.Printf("imported %d new, updated %d, failed %d\n", r.Imported, r.Updated, r.Failed)
+			}
+			return nil
+		},
+	}
+	syncCmd.Flags().StringVar(&syncRoot, "root", importer.DefaultRoot(), "Claude Code projects directory")
+	syncCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "print nothing on success")
+	root.AddCommand(syncCmd)
 
 	root.AddCommand(&cobra.Command{
 		Use:   "sessions",

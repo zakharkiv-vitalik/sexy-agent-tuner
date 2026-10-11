@@ -26,3 +26,5 @@ export function PromptAnalysis(arg1:string):Promise<llm.Result>;
 export function Repo(arg1:string):Promise<main.RepoView>;
 
 export function Repos():Promise<Array<main.RepoRow>>;
+
+export function Sync():Promise<number>;

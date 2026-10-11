@@ -15,6 +15,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/analysis"
+	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/importer"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/insight"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/llm"
 	"github.com/zakharkiv-vitalik/sexy-agent-tuner/internal/session"
@@ -70,6 +71,13 @@ func (a *App) ListSessions() ([]SessionRow, error) {
 			Prompts: s.Prompts, Tokens: s.Tokens, Peak: s.PeakContext})
 	}
 	return rows, nil
+}
+
+// Sync imports new and changed sessions from ~/.claude/projects and returns
+// how many sessions changed. The Repos screen calls it every time it opens.
+func (a *App) Sync() (int, error) {
+	r, err := importer.Sync(a.ctx, a.db, importer.DefaultRoot())
+	return r.Imported + r.Updated, err
 }
 
 // Candidate is a session file found on disk that can be imported.

@@ -259,6 +259,25 @@ func (d *DB) LoadAnalysis(ctx context.Context, scope string) (*Analysis, error) 
 	return &a, nil
 }
 
+// ImportedSources maps each session's source file to when it was imported.
+func (d *DB) ImportedSources(ctx context.Context) (map[string]time.Time, error) {
+	rows, err := d.db.QueryContext(ctx, `SELECT source_path, imported_at FROM sessions WHERE source_path != ''`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]time.Time{}
+	for rows.Next() {
+		var path string
+		var at sql.NullString
+		if err := rows.Scan(&path, &at); err != nil {
+			return nil, err
+		}
+		out[path] = parseTS(at)
+	}
+	return out, rows.Err()
+}
+
 // LoadSessions reads every session, or only those of project when it is set.
 // ponytail: loads everything into memory; page or pre-aggregate if the DB grows to thousands.
 func (d *DB) LoadSessions(ctx context.Context, project string) ([]*session.Session, error) {
